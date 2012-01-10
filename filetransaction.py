@@ -112,18 +112,32 @@ class FileTransaction:
             self.files[realfile]['fp'].close()
             if self.files[realfile]['mode'] in (OP_COPY, OP_TRUNC):
                 old_stat = self.files[realfile]['stat']
-                __stat = self._stat_file(realfile)
-                if bool(old_stat) != bool(__stat):
-                    raise Exception('transaction error: ' + str(old_stat) + str(__stat))
-                if old_stat:
-                    if old_stat.st_mtime != __stat.st_mtime:
-                        raise Exception('transaction error mtime %d <> %d' % ( old_stat.st_mtime, __stat.st_mtime ))
-                    if old_stat.st_size != __stat.st_size:
-                        raise Exception('transaction error size %d <> %d' % (old_stat.st_size, __stat.st_size))
+                _stat = self._stat_file(realfile)
+                if bool(old_stat) != bool(_stat):
+                    msg = 'transaction aborted file %s stat changed %d (%d)' % (
+                        realfile, bool(_stat), bool(old_stat))
+                    raise Exception(msg)
+                if _stat:
+                    if old_stat.st_mtime != _stat.st_mtime:
+                        msg = 'transaction aborted file %s mtime changed %d (%d)' % (
+                            realfile, _stat.st_mtime, old_stat.st_mtime )
+                        raise Exception(msg)
+                    if old_stat.st_size != _stat.st_size:
+                        msg = 'transaction aborted file %s size changed %d (%d)' % (
+                            realfile, _stat.st_size, old_stat.st_size )
+                        raise Exception(msg)
+
         for realfile in self.files:
             if self.files[realfile]['mode'] in (OP_COPY, OP_TRUNC):
                 _tempfile = self.files[realfile]['tempfile']
 		os.rename(_tempfile, realfile)
+
+    def rollback(self):
+
+        for realfile in self.files:
+            self.files[realfile]['fp'].close()
+            if self.files[realfile]['mode'] in (OP_COPY, OP_TRUNC):
+                os.unlink(self.files[realfile]['tempfile'])
 
 if __name__ == '__main__':
     ftrans = FileTransaction()
