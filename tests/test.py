@@ -54,6 +54,8 @@ class MainTest(unittest.TestCase):
         fp2 = ftrans.open(os.path.join(self.tempdir, file2), "w")
         fp1.write(data1)
         fp2.write(data2)
+        fp1.close()
+        fp2.close()
         ftrans.rollback()
 
 	self.assertEqual(open(os.path.join(self.tempdir, file1)).read(), init_data)
