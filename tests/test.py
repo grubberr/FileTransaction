@@ -4,6 +4,8 @@ import os
 import shutil
 import tempfile
 import unittest
+import random
+import string
 
 from filetransaction import FileTransaction
 
@@ -59,6 +61,22 @@ class MainTest(unittest.TestCase):
 
         self.assertEqual(open(file1).read(), init_data)
         self.assertFalse(os.path.exists(file2))
+
+    def test_name_max(self):
+
+        name_max = os.pathconf(self.tempdir, os.pathconf_names['PC_NAME_MAX'])
+
+        file1 = os.path.join(
+            self.tempdir,
+            ''.join(random.choice(string.letters) for _ in xrange(name_max)))
+        ftrans = FileTransaction()
+        ftrans.open(file1, "w")
+        ftrans.commit()
+        self.assertTrue(os.path.exists(file1))
+
+        file2 = file1 + random.choice(string.letters)
+        ftrans = FileTransaction()
+        self.assertRaises(IOError, ftrans.open, file2, "w")
 
 if __name__ == '__main__':
     unittest.main()
