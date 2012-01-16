@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import os
-import sys
 import shutil
 import tempfile
 import unittest
@@ -21,45 +20,45 @@ class MainTest(unittest.TestCase):
         init_data = "init data,"
         data1 = "test data one"
         data2 = "test data two"
-        file1 = "file1.dat"
-        file2 = "file2.dat"
+        file1 = os.path.join(self.tempdir, "file1.dat")
+        file2 = os.path.join(self.tempdir, "file2.dat")
 
-        fp = open(os.path.join(self.tempdir, file1), "w")
+        fp = open(file1, "w")
         fp.write(init_data)
         fp.close()
 
         ftrans = FileTransaction()
-        fp1 = ftrans.open(os.path.join(self.tempdir, file1), "a")
-        fp2 = ftrans.open(os.path.join(self.tempdir, file2), "w")
+        fp1 = ftrans.open(file1, "a")
+        fp2 = ftrans.open(file2, "w")
         fp1.write(data1)
         fp2.write(data2)
         ftrans.commit()
-        self.assertEqual(open(os.path.join(self.tempdir, file1)).read(), init_data + data1)
-        self.assertEqual(open(os.path.join(self.tempdir, file2)).read(), data2)
+        self.assertEqual(open(file1).read(), init_data + data1)
+        self.assertEqual(open(file2).read(), data2)
 
     def test_rollback(self):
 
         init_data = "init data,"
         data1 = "test data one"
         data2 = "test data two"
-        file1 = "file1.dat"
-        file2 = "file2.dat"
+        file1 = os.path.join(self.tempdir, "file1.dat")
+        file2 = os.path.join(self.tempdir, "file2.dat")
 
-        fp = open(os.path.join(self.tempdir, file1), "w")
+        fp = open(file1, "w")
         fp.write(init_data)
         fp.close()
 
         ftrans = FileTransaction()
-        fp1 = ftrans.open(os.path.join(self.tempdir, file1), "a")
-        fp2 = ftrans.open(os.path.join(self.tempdir, file2), "w")
+        fp1 = ftrans.open(file1, "a")
+        fp2 = ftrans.open(file2, "w")
         fp1.write(data1)
         fp2.write(data2)
         fp1.close()
         fp2.close()
         ftrans.rollback()
 
-	self.assertEqual(open(os.path.join(self.tempdir, file1)).read(), init_data)
-	self.assertFalse(os.path.exists(os.path.join(self.tempdir, file2)))
+        self.assertEqual(open(file1).read(), init_data)
+        self.assertFalse(os.path.exists(file2))
 
 if __name__ == '__main__':
     unittest.main()
