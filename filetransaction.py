@@ -19,25 +19,32 @@ class FileTransaction:
         " open file and add to transaction set "
 
         realfile = os.path.realpath(name)
-        if realfile in self.files:
-            raise Exception(name + ' is already in transaction set')
 
-        _op_mode = self._get_op_mode(mode)
+        if realfile not in self.files:
+            self.files[realfile] = {'fp': []}
 
-        if _op_mode == OP_READ:
+        if 'tempfile' in self.files[realfile]:
+            fp = open(self.files[realfile]['tempfile'], mode)
+            self.files[realfile]['fp'].append(fp)
+            return fp
+
+        op_mode = self._get_op_mode(mode)
+
+        if op_mode == OP_READ:
             fp = open(realfile, mode)
-            self.files[realfile] = { "mode": _op_mode, "fp": fp }
+            self.files[realfile]['fp'].append(fp)
             return fp
 
-        elif _op_mode == OP_COPY:
-            ( _tempfile, _stat, fp ) = self.open_copy(realfile, mode)
-            self.files[realfile] = { "mode": _op_mode, "fp": fp, "tempfile": _tempfile, "stat": _stat }
-            return fp
+        elif op_mode == OP_COPY:
+            (tempfile, stat, fp) = self.open_copy(realfile, mode)
 
-        elif _op_mode == OP_TRUNC:
-            ( _tempfile, _stat, fp ) = self.open_trunc(realfile, mode)
-            self.files[realfile] = { "mode": _op_mode, "fp": fp, "tempfile": _tempfile, "stat": _stat }
-            return fp
+        elif op_mode == OP_TRUNC:
+            (tempfile, stat, fp) = self.open_trunc(realfile, mode)
+
+        self.files[realfile]['fp'].append(fp)
+        self.files[realfile]['tempfile'] = tempfile
+        self.files[realfile]['stat'] = stat
+        return fp
 
     def _get_op_mode(self, mode):
         " return op_mode "
@@ -109,8 +116,9 @@ class FileTransaction:
     def commit(self):
 
         for realfile in self.files:
-            self.files[realfile]['fp'].close()
-            if self.files[realfile]['mode'] in (OP_COPY, OP_TRUNC):
+            for fp in self.files[realfile]['fp']:
+                fp.close()
+            if 'tempfile' in self.files[realfile]:
                 old_stat = self.files[realfile]['stat']
                 _stat = self._stat_file(realfile)
                 if bool(old_stat) != bool(_stat):
@@ -128,15 +136,15 @@ class FileTransaction:
                         raise Exception(msg)
 
         for realfile in self.files:
-            if self.files[realfile]['mode'] in (OP_COPY, OP_TRUNC):
-                _tempfile = self.files[realfile]['tempfile']
-		os.rename(_tempfile, realfile)
+            if 'tempfile' in self.files[realfile]:
+                os.rename(self.files[realfile]['tempfile'], realfile)
 
     def rollback(self):
 
         for realfile in self.files:
-            self.files[realfile]['fp'].close()
-            if self.files[realfile]['mode'] in (OP_COPY, OP_TRUNC):
+            for fp in self.files[realfile]['fp']:
+                fp.close()
+            if 'tempfile' in self.files[realfile]:
                 os.unlink(self.files[realfile]['tempfile'])
 
 if __name__ == '__main__':
