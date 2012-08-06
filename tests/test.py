@@ -17,6 +17,11 @@ class MainTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
+    def create_file(self, filename, data):
+        fp = open(filename, 'w')
+        fp.write(data)
+        fp.close()
+
     def test_commit(self):
 
         init_data = "init data,"
@@ -25,9 +30,7 @@ class MainTest(unittest.TestCase):
         file1 = os.path.join(self.tempdir, "file1.dat")
         file2 = os.path.join(self.tempdir, "file2.dat")
 
-        fp = open(file1, "w")
-        fp.write(init_data)
-        fp.close()
+        self.create_file(file1, init_data)
 
         ftrans = FileTransaction()
         fp1 = ftrans.open(file1, "a")
@@ -46,9 +49,7 @@ class MainTest(unittest.TestCase):
         file1 = os.path.join(self.tempdir, "file1.dat")
         file2 = os.path.join(self.tempdir, "file2.dat")
 
-        fp = open(file1, "w")
-        fp.write(init_data)
-        fp.close()
+        self.create_file(file1, init_data)
 
         ftrans = FileTransaction()
         fp1 = ftrans.open(file1, "a")
