@@ -79,5 +79,57 @@ class MainTest(unittest.TestCase):
         ftrans = FileTransaction()
         self.assertRaises(IOError, ftrans.open, file2, "w")
 
+    def test_one_file_commit(self):
+
+        testfile = os.path.join(self.tempdir, 'testfile.dat')
+        self.create_file(testfile, 'one')
+
+        ftrans = FileTransaction()
+
+        fp = ftrans.open(testfile, 'r')
+        self.assertEqual(fp.read(), 'one')
+
+        fp = ftrans.open(testfile, 'w')
+        fp.write('one,two')
+        fp.close()
+        fp = ftrans.open(testfile, 'r')
+        self.assertEqual(fp.read(), 'one,two')
+
+        fp = ftrans.open(testfile, 'a')
+        fp.write(',three')
+        fp.close()
+        fp = ftrans.open(testfile, 'r')
+        self.assertEqual(fp.read(), 'one,two,three')
+
+        ftrans.commit()
+
+        self.assertEqual(open(testfile, 'r').read(), 'one,two,three')
+
+    def test_one_file_rollback(self):
+
+        testfile = os.path.join(self.tempdir, 'testfile.dat')
+        self.create_file(testfile, 'one')
+
+        ftrans = FileTransaction()
+
+        fp = ftrans.open(testfile, 'r')
+        self.assertEqual(fp.read(), 'one')
+
+        fp = ftrans.open(testfile, 'w')
+        fp.write('one,two')
+        fp.close()
+        fp = ftrans.open(testfile, 'r')
+        self.assertEqual(fp.read(), 'one,two')
+
+        fp = ftrans.open(testfile, 'a')
+        fp.write(',three')
+        fp.close()
+        fp = ftrans.open(testfile, 'r')
+        self.assertEqual(fp.read(), 'one,two,three')
+
+        ftrans.rollback()
+
+        self.assertEqual(open(testfile, 'r').read(), 'one')
+
 if __name__ == '__main__':
     unittest.main()
