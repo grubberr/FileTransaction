@@ -6,6 +6,7 @@ import tempfile
 import unittest
 import random
 import string
+import time
 
 from filetransaction import FileTransaction
 
