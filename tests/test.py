@@ -131,5 +131,62 @@ class MainTest(unittest.TestCase):
 
         self.assertEqual(open(testfile, 'r').read(), 'one')
 
+    def test_abort_size(self):
+        " commit aborted because size changed "
+
+        filename = os.path.join(self.tempdir, 'file.dat')
+        self.create_file(filename, 'record1')
+
+        ftrans = FileTransaction()
+        fp = ftrans.open(filename, 'w')
+        fp.write('record2')
+
+        open(filename, 'w').close()
+
+        self.assertRaises(Exception, ftrans.commit)
+
+    def test_abort_mtime(self):
+        " commit aborted because mtime changed "
+
+        filename = os.path.join(self.tempdir, 'file.dat')
+        self.create_file(filename, 'record1')
+
+        ftrans = FileTransaction()
+        fp = ftrans.open(filename, 'w')
+        fp.write('record2')
+
+        time.sleep(1)
+
+        _fp = open(filename, 'w')
+        _fp.write('record3')
+        _fp.close()
+
+        self.assertRaises(Exception, ftrans.commit)
+
+    def test_abort_file_added(self):
+        " commit aborted because file added "
+
+        filename = os.path.join(self.tempdir, 'file.dat')
+
+        ftrans = FileTransaction()
+        fp = ftrans.open(filename, 'w')
+        fp.write('record1')
+
+        open(filename, 'w').close()
+        self.assertRaises(Exception, ftrans.commit)
+
+    def test_abort_file_removed(self):
+        " commit aborted because file removed "
+
+        filename = os.path.join(self.tempdir, 'file.dat')
+        self.create_file(filename, 'record1')
+
+        ftrans = FileTransaction()
+        fp = ftrans.open(filename, 'w')
+        fp.write('record2')
+
+        os.unlink(filename)
+        self.assertRaises(Exception, ftrans.commit)
+
 if __name__ == '__main__':
     unittest.main()
