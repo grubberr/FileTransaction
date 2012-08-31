@@ -149,6 +149,8 @@ class FileTransaction:
             if 'tempfile' in self.files[realfile]:
                 os.rename(self.files[realfile]['tempfile'], realfile)
 
+        self.files = {}
+
     def rollback(self):
 
         for realfile in self.files:
@@ -156,6 +158,9 @@ class FileTransaction:
                 fp.close()
             if 'tempfile' in self.files[realfile]:
                 self._safe_unlink(self.files[realfile]['tempfile'])
+
+    def __del__(self):
+        self.rollback()
 
 if __name__ == '__main__':
     ftrans = FileTransaction()
