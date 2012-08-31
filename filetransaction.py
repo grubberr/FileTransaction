@@ -88,7 +88,7 @@ class FileTransaction:
     def open_copy(self, realfile, mode):
 
         _tempfile = self._get_temp_file(realfile)
-        _stat = self._stat_file(realfile)
+        _stat = self._safe_stat(realfile)
         if _stat:
             shutil.copy2(realfile, _tempfile)
 
@@ -97,17 +97,17 @@ class FileTransaction:
     def open_trunc(self, realfile, mode):
 
         _tempfile = self._get_temp_file(realfile)
-        _stat = self._stat_file(realfile)
+        _stat = self._safe_stat(realfile)
         if _stat:
             os.chown(_tempfile, _stat.st_uid, _stat.st_gid)
             os.chmod(_tempfile, _stat.st_mode)
 
         return ( _tempfile, _stat, open(_tempfile, mode) )
 
-    def _stat_file(self, filename):
+    def _safe_stat(self, path):
         stat = None
         try:
-            stat = os.stat(filename)
+            stat = os.stat(path)
         except OSError, e:
             if e.errno != errno.ENOENT:
                 raise e
@@ -120,7 +120,7 @@ class FileTransaction:
                 fp.close()
             if 'tempfile' in self.files[realfile]:
                 old_stat = self.files[realfile]['stat']
-                _stat = self._stat_file(realfile)
+                _stat = self._safe_stat(realfile)
                 if bool(old_stat) != bool(_stat):
                     msg = 'transaction aborted file %s stat changed %d (%d)' % (
                         realfile, bool(_stat), bool(old_stat))
