@@ -4,6 +4,7 @@ import os
 import errno
 import shutil
 import tempfile
+import logging
 
 OP_READ = 1
 OP_COPY = 2
@@ -113,6 +114,15 @@ class FileTransaction:
                 raise e
         return stat
 
+    def _safe_unlink(self, path):
+
+        try:
+            os.unlink(path)
+        except OSError, e:
+            logging.debug(str(e))
+            if e.errno != errno.ENOENT:
+                raise e
+
     def commit(self):
 
         for realfile in self.files:
@@ -145,7 +155,7 @@ class FileTransaction:
             for fp in self.files[realfile]['fp']:
                 fp.close()
             if 'tempfile' in self.files[realfile]:
-                os.unlink(self.files[realfile]['tempfile'])
+                self._safe_unlink(self.files[realfile]['tempfile'])
 
 if __name__ == '__main__':
     ftrans = FileTransaction()
