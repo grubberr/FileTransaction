@@ -1,10 +1,7 @@
 #!/usr/bin/python
 
-import os
-import errno
 import shutil
 import tempfile
-import logging
 
 OP_READ = 1
 OP_COPY = 2
@@ -13,13 +10,17 @@ OP_TRUNC = 4
 class FileTransaction:
     " FileTransaction "
 
+    import os
+    import errno
+    import logging
+
     def __init__(self):
         self.files = {}
 
     def open(self, name, mode):
         " open file and add to transaction set "
 
-        realfile = os.path.realpath(name)
+        realfile = self.os.path.realpath(name)
 
         if realfile not in self.files:
             self.files[realfile] = {'fp': []}
@@ -69,9 +70,9 @@ class FileTransaction:
 
     def _get_temp_file(self, realfile):
 
-        ( _dirname, _filename ) = os.path.split(realfile)
+        ( _dirname, _filename ) = self.os.path.split(realfile)
 
-        _PC_NAME_MAX = os.pathconf(_dirname, os.pathconf_names['PC_NAME_MAX'])
+        _PC_NAME_MAX = self.os.pathconf(_dirname, self.os.pathconf_names['PC_NAME_MAX'])
         if len(_filename) > _PC_NAME_MAX:
             # raise IOError: File name too long
             open(_filename)
@@ -82,7 +83,7 @@ class FileTransaction:
             _filename = _filename[:-_oversize]
 
         ( fd, _tempfile ) = tempfile.mkstemp(prefix=_filename + '.', dir=_dirname)
-        os.close(fd)
+        self.os.close(fd)
 
         return _tempfile
 
@@ -100,27 +101,27 @@ class FileTransaction:
         _tempfile = self._get_temp_file(realfile)
         _stat = self._safe_stat(realfile)
         if _stat:
-            os.chown(_tempfile, _stat.st_uid, _stat.st_gid)
-            os.chmod(_tempfile, _stat.st_mode)
+            self.os.chown(_tempfile, _stat.st_uid, _stat.st_gid)
+            self.os.chmod(_tempfile, _stat.st_mode)
 
         return ( _tempfile, _stat, open(_tempfile, mode) )
 
     def _safe_stat(self, path):
         stat = None
         try:
-            stat = os.stat(path)
+            stat = self.os.stat(path)
         except OSError, e:
-            if e.errno != errno.ENOENT:
+            if e.errno != self.errno.ENOENT:
                 raise e
         return stat
 
     def _safe_unlink(self, path):
 
         try:
-            os.unlink(path)
+            self.os.unlink(path)
         except OSError, e:
-            logging.debug(str(e))
-            if e.errno != errno.ENOENT:
+            self.logging.debug(str(e))
+            if e.errno != self.errno.ENOENT:
                 raise e
 
     def commit(self):
@@ -147,7 +148,7 @@ class FileTransaction:
 
         for realfile in self.files:
             if 'tempfile' in self.files[realfile]:
-                os.rename(self.files[realfile]['tempfile'], realfile)
+                self.os.rename(self.files[realfile]['tempfile'], realfile)
 
         self.files = {}
 
