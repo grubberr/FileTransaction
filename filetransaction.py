@@ -93,6 +93,7 @@ class FileTransaction:
         _stat = self._safe_stat(realfile)
         if _stat:
             shutil.copy2(realfile, _tempfile)
+            self.os.chown(_tempfile, _stat.st_uid, _stat.st_gid)
 
         return ( _tempfile, _stat, open(_tempfile, mode) )
 
