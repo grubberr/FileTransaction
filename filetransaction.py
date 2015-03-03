@@ -7,7 +7,7 @@ OP_READ = 1
 OP_COPY = 2
 OP_TRUNC = 4
 
-class FileTransaction:
+class FileTransaction(object):
     " FileTransaction "
 
     import os
@@ -70,7 +70,7 @@ class FileTransaction:
 
     def _get_temp_file(self, realfile):
 
-        ( _dirname, _filename ) = self.os.path.split(realfile)
+        (_dirname, _filename) = self.os.path.split(realfile)
 
         _PC_NAME_MAX = self.os.pathconf(_dirname, self.os.pathconf_names['PC_NAME_MAX'])
         if len(_filename) > _PC_NAME_MAX:
@@ -82,7 +82,7 @@ class FileTransaction:
         if _oversize > 0:
             _filename = _filename[:-_oversize]
 
-        ( fd, _tempfile ) = tempfile.mkstemp(prefix=_filename + '.', dir=_dirname)
+        (fd, _tempfile) = tempfile.mkstemp(prefix=_filename + '.', dir=_dirname)
         self.os.close(fd)
 
         return _tempfile
@@ -95,7 +95,7 @@ class FileTransaction:
             shutil.copy2(realfile, _tempfile)
             self.os.chown(_tempfile, _stat.st_uid, _stat.st_gid)
 
-        return ( _tempfile, _stat, open(_tempfile, mode) )
+        return (_tempfile, _stat, open(_tempfile, mode))
 
     def open_trunc(self, realfile, mode):
 
@@ -105,7 +105,7 @@ class FileTransaction:
             self.os.chown(_tempfile, _stat.st_uid, _stat.st_gid)
             self.os.chmod(_tempfile, _stat.st_mode)
 
-        return ( _tempfile, _stat, open(_tempfile, mode) )
+        return (_tempfile, _stat, open(_tempfile, mode))
 
     def _safe_stat(self, path):
         stat = None
@@ -140,11 +140,11 @@ class FileTransaction:
                 if _stat:
                     if old_stat.st_mtime != _stat.st_mtime:
                         msg = 'transaction aborted file %s mtime changed %d (%d)' % (
-                            realfile, _stat.st_mtime, old_stat.st_mtime )
+                            realfile, _stat.st_mtime, old_stat.st_mtime)
                         raise Exception(msg)
                     if old_stat.st_size != _stat.st_size:
                         msg = 'transaction aborted file %s size changed %d (%d)' % (
-                            realfile, _stat.st_size, old_stat.st_size )
+                            realfile, _stat.st_size, old_stat.st_size)
                         raise Exception(msg)
 
         for realfile in self.files:
