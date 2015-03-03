@@ -125,27 +125,35 @@ class FileTransaction(object):
             if e.errno != self.errno.ENOENT:
                 raise e
 
+    def __check_stat(self, realfile):
+
+        old_stat = self.files[realfile]['stat']
+        cur_stat = self._safe_stat(realfile)
+
+        if bool(old_stat) != bool(cur_stat):
+            msg = 'transaction aborted file %s stat changed %d (%d)' % (
+                realfile, bool(cur_stat), bool(old_stat))
+            raise Exception(msg)
+
+        if cur_stat:
+            if old_stat.st_mtime != cur_stat.st_mtime:
+                msg = 'transaction aborted file %s mtime changed %d (%d)' % (
+                    realfile, cur_stat.st_mtime, old_stat.st_mtime)
+                raise Exception(msg)
+
+            if old_stat.st_size != cur_stat.st_size:
+                msg = 'transaction aborted file %s size changed %d (%d)' % (
+                    realfile, cur_stat.st_size, old_stat.st_size)
+                raise Exception(msg)
+
     def commit(self):
 
         for realfile in self.files:
             for fp in self.files[realfile]['fp']:
                 fp.close()
-            if 'tempfile' in self.files[realfile]:
-                old_stat = self.files[realfile]['stat']
-                _stat = self._safe_stat(realfile)
-                if bool(old_stat) != bool(_stat):
-                    msg = 'transaction aborted file %s stat changed %d (%d)' % (
-                        realfile, bool(_stat), bool(old_stat))
-                    raise Exception(msg)
-                if _stat:
-                    if old_stat.st_mtime != _stat.st_mtime:
-                        msg = 'transaction aborted file %s mtime changed %d (%d)' % (
-                            realfile, _stat.st_mtime, old_stat.st_mtime)
-                        raise Exception(msg)
-                    if old_stat.st_size != _stat.st_size:
-                        msg = 'transaction aborted file %s size changed %d (%d)' % (
-                            realfile, _stat.st_size, old_stat.st_size)
-                        raise Exception(msg)
+
+            if 'stat' in self.files[realfile]:
+                self.__check_stat(realfile)
 
         for realfile in self.files:
             if 'tempfile' in self.files[realfile]:
