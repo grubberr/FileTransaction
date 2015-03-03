@@ -141,6 +141,12 @@ class FileTransaction(object):
             raise FileTransactionException(msg)
 
         if cur_stat:
+
+            if old_stat.st_ino != cur_stat.st_ino:
+                msg = 'transaction aborted file %s inode changed %d (%d)' % (
+                    realfile, cur_stat.st_ino, old_stat.st_ino)
+                raise FileTransactionException(msg)
+
             if old_stat.st_mtime != cur_stat.st_mtime:
                 msg = 'transaction aborted file %s mtime changed %d (%d)' % (
                     realfile, cur_stat.st_mtime, old_stat.st_mtime)
