@@ -21,6 +21,13 @@ class FileTransaction(object):
 
     def __init__(self):
         self.files = {}
+        self.dirs = set()
+
+    def mkdir(self, path, mode=0777):
+
+        self.os.mkdir(path, mode)
+        realpath = self.os.path.realpath(path)
+        self.dirs.add(realpath)
 
     def open(self, name, mode):
         " open file and add to transaction set "
@@ -166,6 +173,8 @@ class FileTransaction(object):
             if 'stat' in self.files[realfile]:
                 self.__check_stat(realfile)
 
+        self.dirs = set()
+
         for realfile in self.files:
             if 'tempfile' in self.files[realfile]:
                 self.os.rename(self.files[realfile]['tempfile'], realfile)
@@ -180,11 +189,18 @@ class FileTransaction(object):
             if 'tempfile' in self.files[realfile]:
                 self._safe_unlink(self.files[realfile]['tempfile'])
 
+        for d in sorted(self.dirs, key=lambda x:len(x.split(self.os.path.sep)), reverse=True):
+            try:
+                self.os.rmdir(d)
+            except OSError as e:
+                self.logging.debug(str(e))
+
     def __del__(self):
         self.rollback()
 
 if __name__ == '__main__':
     ftrans = FileTransaction()
-    fp = ftrans.open('file', 'w')
+    ftrans.mkdir('dir')
+    fp = ftrans.open('dir/file', 'w')
     fp.write("data")
     ftrans.commit()

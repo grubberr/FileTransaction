@@ -189,5 +189,32 @@ class MainTest(unittest.TestCase):
         os.unlink(filename)
         self.assertRaises(FileTransactionException, ftrans.commit)
 
+    def test_mkdir_rollback(self):
+
+        ftrans = FileTransaction()
+        ftrans.mkdir(os.path.join(self.tempdir, '1'))
+        ftrans.mkdir(os.path.join(self.tempdir, '1', '2'))
+        fp = ftrans.open(os.path.join(self.tempdir, '1', '2', 'file'), 'w')
+        fp.write('data')
+        fp.close()
+
+        ftrans.rollback()
+
+        self.assertFalse(os.path.exists(os.path.join(self.tempdir, '1')))
+
+    def test_mkdir_commit(self):
+
+        ftrans = FileTransaction()
+        ftrans.mkdir(os.path.join(self.tempdir, '1'))
+        ftrans.mkdir(os.path.join(self.tempdir, '1', '2'))
+        fp = ftrans.open(os.path.join(self.tempdir, '1', '2', 'file'), 'w')
+        fp.write('data')
+        fp.close()
+
+        ftrans.commit()
+        del ftrans
+
+        self.assertTrue(open(os.path.join(self.tempdir, '1', '2', 'file'), 'r').read(), 'data')
+
 if __name__ == '__main__':
     unittest.main()
