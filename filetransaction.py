@@ -7,6 +7,11 @@ OP_READ = 1
 OP_COPY = 2
 OP_TRUNC = 4
 
+
+class FileTransactionException(BaseException):
+    pass
+
+
 class FileTransaction(object):
     " FileTransaction "
 
@@ -133,18 +138,18 @@ class FileTransaction(object):
         if bool(old_stat) != bool(cur_stat):
             msg = 'transaction aborted file %s stat changed %d (%d)' % (
                 realfile, bool(cur_stat), bool(old_stat))
-            raise Exception(msg)
+            raise FileTransactionException(msg)
 
         if cur_stat:
             if old_stat.st_mtime != cur_stat.st_mtime:
                 msg = 'transaction aborted file %s mtime changed %d (%d)' % (
                     realfile, cur_stat.st_mtime, old_stat.st_mtime)
-                raise Exception(msg)
+                raise FileTransactionException(msg)
 
             if old_stat.st_size != cur_stat.st_size:
                 msg = 'transaction aborted file %s size changed %d (%d)' % (
                     realfile, cur_stat.st_size, old_stat.st_size)
-                raise Exception(msg)
+                raise FileTransactionException(msg)
 
     def commit(self):
 

@@ -8,7 +8,7 @@ import random
 import string
 import time
 
-from filetransaction import FileTransaction
+from filetransaction import FileTransaction, FileTransactionException
 
 class MainTest(unittest.TestCase):
 
@@ -144,7 +144,7 @@ class MainTest(unittest.TestCase):
 
         open(filename, 'w').close()
 
-        self.assertRaises(Exception, ftrans.commit)
+        self.assertRaises(FileTransactionException, ftrans.commit)
 
     def test_abort_mtime(self):
         " commit aborted because mtime changed "
@@ -162,7 +162,7 @@ class MainTest(unittest.TestCase):
         _fp.write('record3')
         _fp.close()
 
-        self.assertRaises(Exception, ftrans.commit)
+        self.assertRaises(FileTransactionException, ftrans.commit)
 
     def test_abort_file_added(self):
         " commit aborted because file added "
@@ -174,7 +174,7 @@ class MainTest(unittest.TestCase):
         fp.write('record1')
 
         open(filename, 'w').close()
-        self.assertRaises(Exception, ftrans.commit)
+        self.assertRaises(FileTransactionException, ftrans.commit)
 
     def test_abort_file_removed(self):
         " commit aborted because file removed "
@@ -187,7 +187,7 @@ class MainTest(unittest.TestCase):
         fp.write('record2')
 
         os.unlink(filename)
-        self.assertRaises(Exception, ftrans.commit)
+        self.assertRaises(FileTransactionException, ftrans.commit)
 
 if __name__ == '__main__':
     unittest.main()
