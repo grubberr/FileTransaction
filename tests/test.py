@@ -70,13 +70,13 @@ class MainTest(unittest.TestCase):
 
         file1 = os.path.join(
             self.tempdir,
-            ''.join(random.choice(string.letters) for _ in xrange(name_max)))
+            ''.join(random.choice(string.ascii_letters) for _ in range(name_max)))
         ftrans = FileTransaction()
         ftrans.open(file1, "w")
         ftrans.commit()
         self.assertTrue(os.path.exists(file1))
 
-        file2 = file1 + random.choice(string.letters)
+        file2 = file1 + random.choice(string.ascii_letters)
         ftrans = FileTransaction()
         self.assertRaises(IOError, ftrans.open, file2, "w")
 

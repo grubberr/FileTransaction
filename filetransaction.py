@@ -23,7 +23,7 @@ class FileTransaction(object):
         self.files = {}
         self.dirs = set()
 
-    def mkdir(self, path, mode=0777):
+    def mkdir(self, path, mode=0o777):
 
         self.os.mkdir(path, mode)
         realpath = self.os.path.realpath(path)
@@ -89,7 +89,7 @@ class FileTransaction(object):
             # raise IOError: File name too long
             open(_filename)
 
-        _oversize = len(_filename) + 7 - _PC_NAME_MAX
+        _oversize = len(_filename) + 9 - _PC_NAME_MAX
 
         if _oversize > 0:
             _filename = _filename[:-_oversize]
@@ -123,7 +123,7 @@ class FileTransaction(object):
         stat = None
         try:
             stat = self.os.stat(path)
-        except OSError, e:
+        except OSError as e:
             if e.errno != self.errno.ENOENT:
                 raise e
         return stat
@@ -132,7 +132,7 @@ class FileTransaction(object):
 
         try:
             self.os.unlink(path)
-        except OSError, e:
+        except OSError as e:
             self.logging.debug(str(e))
             if e.errno != self.errno.ENOENT:
                 raise e
