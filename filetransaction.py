@@ -29,31 +29,33 @@ class FileTransaction(object):
         realpath = self.os.path.realpath(path)
         self.dirs.add(realpath)
 
-    def open(self, name, mode):
+    def open(self, file, mode='r', *args, **kwargs):
         " open file and add to transaction set "
 
-        realfile = self.os.path.realpath(name)
+        realfile = self.os.path.realpath(file)
 
         if realfile not in self.files:
             self.files[realfile] = {'fp': []}
 
         if 'tempfile' in self.files[realfile]:
-            fp = open(self.files[realfile]['tempfile'], mode)
+            fp = open(self.files[realfile]['tempfile'], mode, *args, **kwargs)
             self.files[realfile]['fp'].append(fp)
             return fp
 
         op_mode = self._get_op_mode(mode)
 
         if op_mode == OP_READ:
-            fp = open(realfile, mode)
+            fp = open(realfile, mode, *args, **kwargs)
             self.files[realfile]['fp'].append(fp)
             return fp
 
         elif op_mode == OP_COPY:
-            (tempfile, stat, fp) = self.open_copy(realfile, mode)
+            (tempfile, stat) = self.open_copy(realfile)
 
         elif op_mode == OP_TRUNC:
-            (tempfile, stat, fp) = self.open_trunc(realfile, mode)
+            (tempfile, stat) = self.open_trunc(realfile)
+
+        fp = open(tempfile, mode, *args, **kwargs)
 
         self.files[realfile]['fp'].append(fp)
         self.files[realfile]['tempfile'] = tempfile
@@ -99,25 +101,25 @@ class FileTransaction(object):
 
         return _tempfile
 
-    def open_copy(self, realfile, mode):
+    def open_copy(self, realfile):
 
-        _tempfile = self._get_temp_file(realfile)
-        _stat = self._safe_stat(realfile)
-        if _stat:
-            shutil.copy2(realfile, _tempfile)
-            self.os.chown(_tempfile, _stat.st_uid, _stat.st_gid)
+        tempfile = self._get_temp_file(realfile)
+        stat = self._safe_stat(realfile)
+        if stat:
+            shutil.copy2(realfile, tempfile)
+            self.os.chown(tempfile, stat.st_uid, stat.st_gid)
 
-        return (_tempfile, _stat, open(_tempfile, mode))
+        return (tempfile, stat)
 
-    def open_trunc(self, realfile, mode):
+    def open_trunc(self, realfile):
 
-        _tempfile = self._get_temp_file(realfile)
-        _stat = self._safe_stat(realfile)
-        if _stat:
-            self.os.chown(_tempfile, _stat.st_uid, _stat.st_gid)
-            self.os.chmod(_tempfile, _stat.st_mode)
+        tempfile = self._get_temp_file(realfile)
+        stat = self._safe_stat(realfile)
+        if stat:
+            self.os.chown(tempfile, stat.st_uid, stat.st_gid)
+            self.os.chmod(tempfile, stat.st_mode)
 
-        return (_tempfile, _stat, open(_tempfile, mode))
+        return (tempfile, stat)
 
     def _safe_stat(self, path):
         stat = None
@@ -189,7 +191,7 @@ class FileTransaction(object):
             if 'tempfile' in self.files[realfile]:
                 self._safe_unlink(self.files[realfile]['tempfile'])
 
-        for d in sorted(self.dirs, key=lambda x:len(x.split(self.os.path.sep)), reverse=True):
+        for d in sorted(self.dirs, key=lambda x: len(x.split(self.os.path.sep)), reverse=True):
             try:
                 self.os.rmdir(d)
             except OSError as e:
