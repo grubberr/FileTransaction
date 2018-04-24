@@ -23,6 +23,12 @@ class FileTransaction(object):
         self.files = {}
         self.dirs = set()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, tb):
+        self.rollback()
+
     def mkdir(self, path, mode=0o777):
 
         self.os.mkdir(path, mode)
@@ -168,30 +174,31 @@ class FileTransaction(object):
 
     def commit(self):
 
-        for realfile in self.files:
-            for fp in self.files[realfile]['fp']:
+        for realfile, filedata in self.files.items():
+            for fp in filedata['fp']:
                 fp.close()
 
-            if 'stat' in self.files[realfile]:
+            if 'stat' in filedata:
                 self.__check_stat(realfile)
 
-        self.dirs = set()
+        while self.files:
+            realfile, filedata = self.files.popitem()
+            if 'tempfile' in filedata:
+                self.os.rename(filedata['tempfile'], realfile)
 
-        for realfile in self.files:
-            if 'tempfile' in self.files[realfile]:
-                self.os.rename(self.files[realfile]['tempfile'], realfile)
-
-        self.files = {}
+        self.dirs.clear()
 
     def rollback(self):
 
-        for realfile in self.files:
-            for fp in self.files[realfile]['fp']:
+        while self.files:
+            realfile, filedata = self.files.popitem()
+            for fp in filedata['fp']:
                 fp.close()
-            if 'tempfile' in self.files[realfile]:
-                self._safe_unlink(self.files[realfile]['tempfile'])
+            if 'tempfile' in filedata:
+                self._safe_unlink(filedata['tempfile'])
 
         for d in sorted(self.dirs, key=lambda x: len(x.split(self.os.path.sep)), reverse=True):
+            self.dirs.remove(d)
             try:
                 self.os.rmdir(d)
             except OSError as e:
